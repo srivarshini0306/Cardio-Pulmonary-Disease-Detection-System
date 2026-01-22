@@ -1,0 +1,9 @@
+streamlit #ui framework 
+tensorflow #ml framework
+librosa #audio processing
+numpy #numeric processing
+pandas #data processing
+scikit-learn #machine learning
+matplotlib #data visualization
+soundfile #audio file processing
+huggingface-hub #model loading
