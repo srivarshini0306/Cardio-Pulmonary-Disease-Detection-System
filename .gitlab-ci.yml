@@ -30,7 +30,7 @@ test_backend:
   script:
     # No need to install anything! The docker image already has tf, librosa, etc.
     - cd /app
-    - pytest tests/
+    - PYTHONPATH=. pytest tests/
   only:
     - main
     - merge_requests
