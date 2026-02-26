@@ -53,8 +53,19 @@ deploy:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - eval $(ssh-agent -s)
-    # Robust key loading: removes Windows chars and adds to agent
-    - echo "$AWS_PUBLIC_KEY" | tr -d '\r' | ssh-add -
+    # DIAGNOSTIC: Check if it's a file or a string
+    - |
+      if [ -f "$AWS_PUBLIC_KEY" ]; then
+        echo "Detected AWS_PUBLIC_KEY as a FILE type."
+        tr -d '\r' < "$AWS_PUBLIC_KEY" > ~/.ssh/id_rsa
+      else
+        echo "Detected AWS_PUBLIC_KEY as a VARIABLE type."
+        printf "%s\n" "$AWS_PUBLIC_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+      fi
+    - chmod 600 ~/.ssh/id_rsa
+    # DIAGNOSTIC: Check if the key looks correct (shows first few chars)
+    - head -c 30 ~/.ssh/id_rsa && echo "..."
+    - ssh-add ~/.ssh/id_rsa
     - ssh-keyscan $AWS_PUBLIC_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
