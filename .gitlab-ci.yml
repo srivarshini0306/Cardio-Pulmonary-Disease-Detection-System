@@ -53,18 +53,25 @@ deploy:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - eval $(ssh-agent -s)
+    # CHECK: Is the variable set at all?
+    - |
+      if [ -z "$AWS_PRIVATE_KEY" ]; then
+        echo "CRITICAL ERROR: AWS_PRIVATE_KEY is not defined in GitLab CI/CD Variables!"
+        echo "Please check Settings -> CI/CD -> Variables and ensure the key name is exactly 'AWS_PRIVATE_KEY'."
+        exit 1
+      fi
     # DIAGNOSTIC: Check if it's a file or a string
     - |
-      if [ -f "$AWS_PUBLIC_KEY" ]; then
-        echo "Detected AWS_PUBLIC_KEY as a FILE type."
-        tr -d '\r' < "$AWS_PUBLIC_KEY" > ~/.ssh/id_rsa
+      if [ -f "$AWS_PRIVATE_KEY" ]; then
+        echo "Detected AWS_PRIVATE_KEY as a FILE type (Path: $AWS_PRIVATE_KEY)"
+        tr -d '\r' < "$AWS_PRIVATE_KEY" > ~/.ssh/id_rsa
       else
-        echo "Detected AWS_PUBLIC_KEY as a VARIABLE type."
-        printf "%s\n" "$AWS_PUBLIC_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+        echo "Detected AWS_PRIVATE_KEY as a VARIABLE type (Length: ${#AWS_PRIVATE_KEY} characters)"
+        printf "%s\n" "$AWS_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
       fi
     - chmod 600 ~/.ssh/id_rsa
-    # DIAGNOSTIC: Check if the key looks correct (shows first few chars)
-    - head -c 30 ~/.ssh/id_rsa && echo "..."
+    # DIAGNOSTIC: Confirm it now contains the 'BEGIN' header
+    - grep "BEGIN" ~/.ssh/id_rsa || (echo "ERROR: File does not look like a private key (no BEGIN header found)" && exit 1)
     - ssh-add ~/.ssh/id_rsa
     - ssh-keyscan $AWS_PUBLIC_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
