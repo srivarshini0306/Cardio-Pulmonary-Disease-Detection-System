@@ -61,9 +61,18 @@ deploy:
     - apk add --no-cache openssh-client
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo "$AWS_PUBLIC_KEY" > ~/.ssh/id_rsa
-    - sed -i 's/\r$//' ~/.ssh/id_rsa
+    # Robust key loading: handles both content and filepath variables, and removes Windows line endings
+    - |
+      if [ -f "$AWS_PUBLIC_KEY" ]; then
+        cp "$AWS_PUBLIC_KEY" ~/.ssh/id_rsa
+      else
+        printf '%s\n' "$AWS_PUBLIC_KEY" > ~/.ssh/id_rsa
+      fi
+    - tr -d '\r' < ~/.ssh/id_rsa > ~/.ssh/id_rsa_clean
+    - mv ~/.ssh/id_rsa_clean ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
+    # Debug info (will show first line, helps confirm if it's actually a private key)
+    - head -n 1 ~/.ssh/id_rsa
     - ssh-keyscan $AWS_PUBLIC_IP >> ~/.ssh/known_hosts
   script:
     - echo "DOCKER_IMAGE_BACKEND=$DOCKER_IMAGE_BACKEND" > .env
