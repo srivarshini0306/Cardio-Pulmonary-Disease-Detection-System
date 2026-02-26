@@ -8,7 +8,7 @@ variables:
   DOCKER_IMAGE_STREAMLIT: $CI_REGISTRY_IMAGE/streamlit:$CI_COMMIT_REF_SLUG
 
 services:
-  - docker:dind
+  - docker:27-dind
 
 cache:
   paths:
@@ -19,7 +19,7 @@ cache:
 
 build:
   stage: build
-  image: docker:24.0.5
+  image: docker:27
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build --pull -t $DOCKER_IMAGE_BACKEND -f docker/Dockerfile .
