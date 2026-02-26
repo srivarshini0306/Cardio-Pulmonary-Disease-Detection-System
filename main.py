@@ -28,9 +28,6 @@ app.add_middleware(
 heart_model = load_heart_model()
 lung_model = load_lung_model()
 
-@app.get("/")
-async def root():
-    return {"message": "Cardio-Pulmonary AI API is running"}
 
 @app.post("/predict/heart")
 async def predict_heart(file: UploadFile = File(...)):
@@ -90,6 +87,12 @@ async def predict_lung(file: UploadFile = File(...)):
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
+
+# Serve React Frontend (Mounted last to avoid shadowing API routes)
+from fastapi.staticfiles import StaticFiles
+frontend_path = os.path.join(os.getcwd(), "frontend", "dist")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

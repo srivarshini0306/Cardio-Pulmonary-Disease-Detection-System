@@ -9,3 +9,11 @@ wheels/
 # Virtual environments
 bvenv
 model files
+
+# Node
+node_modules/
+frontend/dist/
+
+# Docker
+.dockerignore
+docker-compose.override.yml

@@ -1,5 +1,5 @@
 streamlit #ui framework 
-tensorflow #ml framework
+tensorflow-cpu #ml framework (lighter for docker)
 librosa #audio processing
 numpy #numeric processing
 pandas #data processing

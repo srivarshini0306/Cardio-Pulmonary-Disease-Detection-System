@@ -1,0 +1,58 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_IMAGE_BACKEND: $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_REF_SLUG
+  DOCKER_IMAGE_STREAMLIT: $CI_REGISTRY_IMAGE/streamlit:$CI_COMMIT_REF_SLUG
+
+services:
+  - docker:dind
+
+before_script:
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+build:
+  stage: build
+  script:
+    - docker build -t $DOCKER_IMAGE_BACKEND -f docker/Dockerfile .
+    - docker push $DOCKER_IMAGE_BACKEND
+    - docker build -t $DOCKER_IMAGE_STREAMLIT -f docker/Dockerfile .
+    - docker push $DOCKER_IMAGE_STREAMLIT
+  only:
+    - main
+
+test_backend:
+  stage: test
+  image: python:3.10-slim
+  script:
+    - pip install -r requirements.txt
+    # Add your test command here, e.g., pytest
+    - echo "Running backend tests..."
+  only:
+    - main
+    - merge_requests
+
+test_frontend:
+  stage: test
+  image: node:20-slim
+  script:
+    - cd frontend
+    - npm install
+    - npm run lint
+    - echo "Running frontend tests..."
+  only:
+    - main
+    - merge_requests
+
+deploy_staging:
+  stage: deploy
+  script:
+    - echo "Deploying to staging..."
+    # - docker-compose -f docker/docker-compose.yml pull
+    # - docker-compose -f docker/docker-compose.yml up -d
+  environment:
+    name: staging
+  only:
+    - main
