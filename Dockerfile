@@ -1,25 +1,39 @@
-FROM node:18-slim AS builder
+# Build Stage: Frontend
+FROM node:18-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
-COPY frontend/ .
+COPY frontend/ ./
 RUN npm run build
 
+# Final Stage: Python Application
 FROM python:3.10-slim
-WORKDIR /app
-ENV PYTHONUNBUFFERED=1
 
-RUN apt-get update && apt-get install -y ffmpeg libsndfile1 && \
-    rm -rf /var/lib/apt/lists/*
+# Install system dependencies (needed for audio processing/librosa)
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy python requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN python3 -c "from huggingface_hub import hf_hub_download as hfd; hfd('srivarshini0306/body_sound_detection', 'lstm_model.h5'); hfd('srivarshini0306/body_sound_detection', 'lung_model.h5')"
-
+# Copy application code
 COPY . .
-COPY --from=builder /app/frontend/dist ./frontend/dist
 
-# Fix potential Windows line endings and set permissions
-RUN sed -i 's/\r$//' start.sh && chmod +x start.sh
+# Copy built frontend from stage 1
+COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
+
+# Expose ports
+# 8000: FastAPI + Static Frontend
+# 8501: Streamlit Dashboard
 EXPOSE 8000 8501
-CMD ["./start.sh"]
+
+# Add execution permission to the start script
+RUN chmod +x /app/start.sh
+
+# Start services
+CMD ["/app/start.sh"]
